@@ -1,3 +1,4 @@
+from cairosvg import svg2png
 from colorthief import ColorThief
 from flask import current_app as app
 from PIL import Image
@@ -28,8 +29,7 @@ class HasThumbMixin(object):
                                      + humanize(self.id)\
                                      + (('_' + str(index)) if index > 0 else '')
 
-    def save_thumb(self, thumb, index):
-        image_type = None
+    def save_thumb(self, thumb, index, image_type = None):
         if isinstance(thumb, str):
             if not thumb[0:4] == 'http':
                 raise ValueError('Invalid thumb URL for object '
@@ -48,11 +48,14 @@ class HasThumbMixin(object):
                                  + ' content-type: ' + content_type)
         with tempfile.TemporaryFile() as tf:
             tf.write(thumb)
-            color_thief = ColorThief(tf)
-            self.firstThumbDominantColor = bytearray(color_thief.get_color(quality=1))
             if image_type is None:
                 img = Image.open(tf)
                 image_type = img.format.lower()
+            if image_type == 'svg':
+                color_thief = ColorThief(svg2png(bytestring=thumb))
+            else:
+                color_thief = ColorThief(tf)
+            self.firstThumbDominantColor = bytearray(color_thief.get_color(quality=1))
         store_public_object("thumbs",
                             self.thumb_storage_id(index),
                             thumb,

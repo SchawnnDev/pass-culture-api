@@ -240,7 +240,7 @@ def do_init():
     mediation3.event = event3
     mediation3.what = "Atelier d'initiation avec la création d'une page (4 à 6 cases) sur un scénario collectif ou un scénario individuel imaginé par les participants."
     check_and_save(mediation3)
-    set_from_mock("thumbs", mediation3, 2)
+    set_from_mock("thumbs", mediation3, 2, mime_type='image/svg')
 
     user_mediation3 = model.UserMediation()
     user_mediation3.mediation = mediation3
