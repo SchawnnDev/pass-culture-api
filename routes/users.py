@@ -10,6 +10,7 @@ from pathlib import Path
 from models.api_errors import ApiErrors
 from utils.human_ids import humanize
 from utils.includes import USERS_INCLUDES
+from utils.credentials import get_user_with_credentials
 from utils.object_storage import store_public_object
 
 User = app.model.User
@@ -31,7 +32,7 @@ def signin():
     json = request.get_json()
     identifier = json.get("identifier")
     password = json.get("password")
-    user = app.get_user_with_credentials(identifier, password)
+    user = get_user_with_credentials(identifier, password)
     return jsonify(user._asdict(include=USERS_INCLUDES)), 200
 
 
@@ -92,3 +93,13 @@ def signup():
         )
     login_user(new_user)
     return jsonify(new_user._asdict(include=USERS_INCLUDES)), 201
+
+"""
+# TODO with good method here http://flask-login.readthedocs.io/en/latest/
+@app.route("/users", methods=["PUT"])
+def password():
+    email = request.json['email']
+    password = request.json['password']
+    user = get_user_with_credentials, password, is_new=True)
+    return jsonify(user._asdict(include=USERS_INCLUDES)), 201
+"""

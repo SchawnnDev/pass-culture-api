@@ -8,6 +8,7 @@ from flask import current_app as app, request
 from psycopg2.extras import DateTimeRange
 from sqlalchemy.orm.collections import InstrumentedList
 
+from models.api_errors import ApiErrors
 from utils.human_ids import dehumanize, humanize
 
 db = app.db
@@ -119,7 +120,7 @@ class PcObject():
         pprint(vars(self))
 
     def errors(self):
-        errors = app.model.ApiErrors()
+        errors = ApiErrors()
         data = self.__class__.__table__.columns._data
         for key in data.keys():
             col = data[key]
