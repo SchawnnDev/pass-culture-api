@@ -10,12 +10,25 @@ from utils.test_utils import API_URL, req, req_with_auth
 RECOMMENDATION_URL = API_URL + '/recommendations'
 
 
+def req_93():
+    return req_with_auth(user='pctest.jeune.93@btmx.fr')
+
+
+def req_34():
+    return req_with_auth(user='pctest.jeune.34@btmx.fr')
+
+
 def test_10_put_recommendations_should_work_only_when_logged_in():
     r = req.put(RECOMMENDATION_URL)
     assert r.status_code == 401
 
 
-def check_recos(recos):
+def check_departement_code(reco, dept_code):
+    if 'mediatedOccurences' in reco:
+        assert not all([oc['venue']['departementCode'] != '93' for oc in reco['mediatedOccurences']])
+
+    
+def check_recos(recos, dept_code=93):
     # ensure we have no duplicate mediations
     ids = list(filter(lambda id: id != None,
                       map(lambda reco: reco['mediationId'],
@@ -29,11 +42,11 @@ def check_recos(recos):
             assert not all([offer['bookingLimitDatetime'] is not None and
                             parse_date(offer['bookingLimitDatetime']) <= datetime.now()
                             for offer in oc['offers'] for oc in reco['mediatedOccurences']])
-            assert not all([oc['venue']['departementCode'] != '93' for oc in reco['mediatedOccurences']])
+            check_departement_code(reco, dept_code)
 
 
 def subtest_initial_recos():
-    r = req_with_auth().put(RECOMMENDATION_URL, json={})
+    r = req_93().put(RECOMMENDATION_URL, json={})
     assert r.status_code == 200
     recos = r.json()
     assert len(recos) == BLOB_SIZE + 2
@@ -53,7 +66,7 @@ def subtest_recos_with_params(params,
                               expected_mediation_id=None,
                               expected_occasion_type=None,
                               expected_occasion_id=None):
-    r = req_with_auth().put(RECOMMENDATION_URL+'?'+params, json={})
+    r = req_93().put(RECOMMENDATION_URL+'?'+params, json={})
     assert r.status_code == expected_status
     if expected_status == 200:
         recos = r.json()
@@ -145,16 +158,16 @@ def test_14_actual_errors_should_generate_a_400():
 
 
 def test_16_once_marked_as_read_tutos_should_not_come_back():
-    r = req_with_auth().put(RECOMMENDATION_URL, json={})
+    r = req_93().put(RECOMMENDATION_URL, json={})
     assert r.status_code == 200
     recos_before = r.json()
     assert recos_before[0]['mediation']['tutoIndex'] == 0
     assert recos_before[1]['mediation']['tutoIndex'] == 1
-    r_update = req_with_auth().patch(API_URL + '/recommendations/' + recos_before[0]['id'],
+    r_update = req_93().patch(API_URL + '/recommendations/' + recos_before[0]['id'],
                                      json={'dateRead': datetime.now().strftime('%Y-%m-%dT%H:%M:%S')})
     assert r_update.status_code == 200
 
-    r = req_with_auth().put(RECOMMENDATION_URL, json={})
+    r = req_93().put(RECOMMENDATION_URL, json={})
     assert r.status_code == 200
     recos_after = r.json()
     assert recos_after[0]['mediation']['tutoIndex'] == 1
@@ -163,7 +176,7 @@ def test_16_once_marked_as_read_tutos_should_not_come_back():
 
 
 def test_17_put_recommendations_should_return_more_recos():
-    r = req_with_auth().put(RECOMMENDATION_URL, json={})
+    r = req_93().put(RECOMMENDATION_URL, json={})
     assert r.status_code == 200
     recos = r.json()
     # ensure we still have no duplicates
@@ -172,11 +185,11 @@ def test_17_put_recommendations_should_return_more_recos():
 
 
 def test_18_patch_recommendations_should_return_is_clicked_true():
-    r = req_with_auth().put(RECOMMENDATION_URL, json={})
+    r = req_93().put(RECOMMENDATION_URL, json={})
     assert r.status_code == 200
     recos = r.json()
     recoId = recos[0]['id']
-    r_update = req_with_auth().patch(API_URL + '/recommendations/' + recoId,
+    r_update = req_93().patch(API_URL + '/recommendations/' + recoId,
                                      json={'isClicked': True})
     assert r_update.status_code == 200
     assert r_update.json()['isClicked']

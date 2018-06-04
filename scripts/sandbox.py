@@ -5,7 +5,11 @@ from datetime import datetime, timedelta
 from pprint import pprint
 import traceback
 from flask import current_app as app
+import json
+from os import path
+from pathlib import Path
 
+from mock import 'users_jeunes.json'
 from utils.mock import set_from_mock
 
 @app.manager.command
@@ -22,15 +26,13 @@ def do_sandbox():
     check_and_save = app.model.PcObject.check_and_save
     model = app.model
 
-    # un jeune qui veut profiter du pass-culture
-    client_user = model.User()
-    client_user.publicName = "Utilisateur test jeune"
-    client_user.account = 100
-    client_user.email = "pctest.jeune@btmx.fr"
-    client_user.departementCode = "93"
-    client_user.setPassword("pctestjeune")
-    check_and_save(client_user)
-    set_from_mock("thumbs", client_user, 1)
+    json_path = Path(path.dirname(path.realpath(__file__))) / '..' / 'mock'\
+                / 'users_jeunes.json'
+    with open(json_path) as json:
+        for user_json in json.load(json):
+            user = model.User(from_dict=user_json)
+            check_and_save(admin_user)
+            set_from_mock("thumbs", admin_user, 1)
 
     # un acteur culturel qui peut jouer a rajouter des offres partout
     admin_user = model.User()
